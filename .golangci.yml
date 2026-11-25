@@ -1,0 +1,47 @@
+version: "2"
+
+linters:
+  enable:
+    # project additions
+    # keep this list alphabetically sorted
+    - bodyclose
+    - goconst
+    - gosec
+    - misspell
+    - nakedret
+    - nolintlint
+    - prealloc
+    - revive
+    - unconvert
+  settings:
+    misspell:
+      locale: US
+    nakedret:
+      max-func-lines: 1
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+
+formatters:
+  enable:
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+    goimports:
+      local-prefixes:
+        - github.com/seelly/wecomapi
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
