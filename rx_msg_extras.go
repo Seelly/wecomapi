@@ -71,6 +71,22 @@ func extractMessageExtras(common rxMessageCommon, body []byte) (messageKind, err
 			}
 			return &x, nil
 
+		case EventTypeDocChange:
+			var x rxEventDocChange
+			err := xml.Unmarshal(body, &x)
+			if err != nil {
+				return nil, err
+			}
+			return &x, nil
+
+		case EventTypeSmartSheetChange:
+			var x rxEventSmartSheetChange
+			err := xml.Unmarshal(body, &x)
+			if err != nil {
+				return nil, err
+			}
+			return &x, nil
+
 		case EventTypeChangeExternalContact:
 			switch common.ChangeType {
 			case ChangeTypeAddExternalContact:

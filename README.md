@@ -6,7 +6,7 @@ fork from [xen0n/go-workwx](https://github.com/xen0n/go-workwx) 。
 
 - 包名 `wecomapi`。
 - 主要入口：`Client`（企业级）、`App`（应用级，绝大多数 API 方法挂在 `*App` 上）、`ClientError`（企业微信业务错误）。
-- 覆盖通讯录、客户联系、微信客服、应用管理、消息收发、素材、OA（审批 / 日程 / 日历）、会话内容存档、群机器人 Webhook 等接口。
+- 覆盖通讯录、客户联系、微信客服、应用管理、消息收发、素材、OA（审批 / 日程 / 日历）、会话内容存档、文档 API（企业微信文档 / 表格 / 智能表格 / 智能文档 / 收集表）、群机器人 Webhook 等接口。
 - 内置 access_token 管理、回调消息的签名校验与 AES 加解密。
 
 ## 特性
@@ -67,6 +67,16 @@ err := wc.SendTextMessage("hello", &wecomapi.Mentions{UserIDs: []string{"zhangsa
 | `internal/sdkcodegen` | Markdown spec → Go 代码生成器 |
 | `internal/lowlevel` | 加密、签名、回调 envelope 等底层原语 |
 | `errcodes/` | 全局错误码（由 `internal/errcodegen` 从企业微信文档生成） |
+
+文档 API 是当前最大的一个域，沿用同一套约定：
+
+- 契约：`docs/wedoc.md`（262 个模型 + 71 个 API calls）；
+- 生成：`wedoc.md.go`（公开模型 + 私有 `execWedocXxx`）；
+- 传输类型：`models.go` 末尾的 `reqWedoc`、`reqWedocWebhook`、`respWedoc[T]` 及 71 个响应别名；
+- 公开方法：`wedoc.go`；
+- 回调：`rx_msg_wedoc.go`。
+
+新增单个文档接口时，改 `docs/wedoc.md` 后重新生成即可，不需要再新增文件。
 
 生成文件与手写文件的分工：
 
@@ -251,6 +261,45 @@ go vet ./...
 - [ ] `go test ./...` 通过
 - [ ] 下方“已支持接口”列表已同步
 
+## 文档 API
+
+覆盖企业微信文档开放接口 <https://developer.work.weixin.qq.com/document/path/97392>，共 71 个 HTTP 接口，方法名统一以 `Wedoc` 开头：
+
+| 分组 | 接口数 | 说明 |
+|:---|:---:|:---|
+| 管理文档 | 5 | 新建、重命名、删除、基础信息、分享 |
+| 管理文档内容 | 2 | 编辑文档内容、获取文档数据 |
+| 管理表格内容 | 3 | 编辑表格、行列信息、范围数据 |
+| 管理智能表格内容 | 20 | 子表、视图、字段、记录、编组 |
+| 管理智能文档内容 | 17 | 页面、内容块、导出、数据表、发布 |
+| 设置文档权限 | 9 | 查看规则、加入规则、成员、安全设置、内容权限 |
+| 管理收集表 | 5 | 创建、编辑、信息、统计、答案 |
+| 接收外部数据到智能表格 | 2 | Webhook 添加/更新记录 |
+| 高级功能账号管理 | 3 | 分配、取消、列表 |
+| 素材管理 | 5 | 图片、文件、分块上传 |
+
+示例：
+
+```go
+doc, err := app.WedocCreateDoc(wecomapi.WedocCreateDocReq{
+    DocType: 3, // 3-文档 4-表格 10-智能表格 11-智能文档
+    DocName: "项目周报",
+})
+if err != nil {
+    // ...
+}
+info, err := app.WedocGetDocBaseInfo(wecomapi.WedocGetDocBaseInfoReq{DocID: doc.DocID})
+```
+
+文档 API 的 access_token 对应应用需要在企业微信管理端「协作 - 文档 - API」中配置为可调用应用；第三方/代开发应用需具备「文档」权限。
+
+回调事件：
+
+- `doc_change`：修改文档成员、删除文档、收集表完成、删除收集表、修改收集表设置；
+- `smart_sheet_change`：字段/记录的新增、更新、删除。
+
+通过 `RxMessage.EventDocChange()` / `RxMessage.EventSmartSheetChange()` 读取。
+
 ## 已支持接口
 
 - [x] 通讯录管理（**部分支持**）
@@ -262,6 +311,7 @@ go vet ./...
 - [x] 素材管理（**部分支持**）
 - [x] OA：审批 / 日程 / 日历（**部分支持**）
 - [x] 会话内容存档（**大部分支持**）
+- [x] 文档 API（企业微信文档 / 表格 / 智能表格 / 智能文档 / 收集表）
 - [x] 企业微信登录接口（code2Session）
 - [x] 获取访问用户身份（code2UserInfo）
 - [x] 群机器人 Webhook
@@ -503,6 +553,7 @@ Markdown 等类型消息目前不支持作为保密消息发送，强行发送�
 - `omitempty` 直接写在 spec 的 JSON 列即可，生成器会原样输出；`docs/schedule.md` 已按此方式修正，`schedule.md.go` 可以重复生成。
 - `docs/` 已完整恢复。`go generate -run 'internal/sdkcodegen' ./...` 只重新生成 `.md.go`；不带 `-run` 的 `go generate ./...` 还会运行 `errcodegen`，需要网络并会更新 `errcodes/mod.go`。
 - `docs/foo.md`、`docs/media_upload.md` 未登记到 `dummy_for_generate.go`（前者是生成器测试样例，后者依赖尚未支持的 import 生成），保留作参考。
+- `docs/wedoc.md` 已登记到 `dummy_for_generate.go`，`go generate -run 'internal/sdkcodegen' ./...` 会同时重新生成 `wedoc.md.go`；文档 API 的私有 `reqWedoc` / `respWedoc[T]` 和响应别名在 `models.go` 末尾，公开方法在 `wedoc.go`。
 
 ## License
 

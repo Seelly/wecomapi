@@ -2512,3 +2512,123 @@ type respCalendarGet struct {
 	// CalendarList 日历列表
 	CalendarList []Calendar `json:"calendar_list"`
 }
+
+// ---------- 文档 API 传输类型 ----------
+
+// reqWedoc 文档 API 的通用 JSON 请求体。
+type reqWedoc struct {
+	Body any
+}
+
+var _ bodyer = reqWedoc{}
+
+func (x reqWedoc) intoBody() ([]byte, error) {
+	return marshalIntoJSONBody(x.Body)
+}
+
+// reqWedocWebhook 智能表格「接收外部数据」Webhook 请求，使用 URL 上的 key 鉴权。
+type reqWedocWebhook struct {
+	Key  string
+	Body any
+}
+
+var _ bodyer = reqWedocWebhook{}
+var _ urlValuer = reqWedocWebhook{}
+
+func (x reqWedocWebhook) intoBody() ([]byte, error) {
+	return marshalIntoJSONBody(x.Body)
+}
+
+func (x reqWedocWebhook) intoURLValues() url.Values {
+	return url.Values{
+		"key": {x.Key},
+	}
+}
+
+// respWedoc 文档 API 的通用响应；Data 为各接口生成的业务字段模型。
+type respWedoc[T any] struct {
+	respCommon
+	Data T
+}
+
+func (x *respWedoc[T]) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, &x.Data); err != nil {
+		return err
+	}
+	return json.Unmarshal(data, &x.respCommon)
+}
+
+// WedocEmptyPayload 无业务字段的响应载荷。
+type WedocEmptyPayload struct{}
+
+type respWedocCreateDoc = respWedoc[WedocCreateDocResp]
+type respWedocRenameDoc = respWedoc[WedocEmptyPayload]
+type respWedocDeleteDoc = respWedoc[WedocEmptyPayload]
+type respWedocGetDocBaseInfo = respWedoc[WedocGetDocBaseInfoResp]
+type respWedocShareDoc = respWedoc[WedocShareDocResp]
+type respWedocBatchUpdateDocument = respWedoc[WedocEmptyPayload]
+type respWedocGetDocument = respWedoc[WedocGetDocumentResp]
+type respWedocBatchUpdateSpreadsheet = respWedoc[WedocBatchUpdateSpreadsheetResp]
+type respWedocGetSheetProperties = respWedoc[WedocGetSheetPropertiesResp]
+type respWedocGetSheetRangeData = respWedoc[WedocGetSheetRangeDataResp]
+type respWedocAddSheet = respWedoc[WedocAddSheetResp]
+type respWedocDeleteSheet = respWedoc[WedocEmptyPayload]
+type respWedocUpdateSheet = respWedoc[WedocEmptyPayload]
+type respWedocGetSheet = respWedoc[WedocGetSheetResp]
+type respWedocAddView = respWedoc[WedocAddViewResp]
+type respWedocDeleteViews = respWedoc[WedocEmptyPayload]
+type respWedocUpdateView = respWedoc[WedocUpdateViewResp]
+type respWedocGetViews = respWedoc[WedocGetViewsResp]
+type respWedocAddFields = respWedoc[WedocAddFieldsResp]
+type respWedocDeleteFields = respWedoc[WedocEmptyPayload]
+type respWedocUpdateFields = respWedoc[WedocUpdateFieldsResp]
+type respWedocGetFields = respWedoc[WedocGetFieldsResp]
+type respWedocAddRecords = respWedoc[WedocAddRecordsResp]
+type respWedocDeleteRecords = respWedoc[WedocEmptyPayload]
+type respWedocUpdateRecords = respWedoc[WedocUpdateRecordsResp]
+type respWedocGetRecords = respWedoc[WedocGetRecordsResp]
+type respWedocAddFieldGroup = respWedoc[WedocAddFieldGroupResp]
+type respWedocDeleteFieldGroups = respWedoc[WedocEmptyPayload]
+type respWedocUpdateFieldGroup = respWedoc[WedocUpdateFieldGroupResp]
+type respWedocGetFieldGroups = respWedoc[WedocGetFieldGroupsResp]
+type respWedocAddPage = respWedoc[WedocAddPageResp]
+type respWedocUpdatePage = respWedoc[WedocUpdatePageResp]
+type respWedocDeletePage = respWedoc[WedocEmptyPayload]
+type respWedocGetPageHierarchy = respWedoc[WedocGetPageHierarchyResp]
+type respWedocAddBlocks = respWedoc[WedocAddBlocksResp]
+type respWedocUpdateBlocks = respWedoc[WedocUpdateBlocksResp]
+type respWedocDeleteBlocks = respWedoc[WedocEmptyPayload]
+type respWedocGetBlockList = respWedoc[WedocGetBlockListResp]
+type respWedocExportTask = respWedoc[WedocExportTaskResp]
+type respWedocGetExportResult = respWedoc[WedocGetExportResultResp]
+type respWedocGetSmartsheetInfo = respWedoc[WedocGetSmartsheetInfoResp]
+type respWedocAddSmartsheet = respWedoc[WedocAddSmartsheetResp]
+type respWedocDeleteSmartsheet = respWedoc[WedocEmptyPayload]
+type respWedocUpdateSmartsheet = respWedoc[WedocUpdateSmartsheetResp]
+type respWedocPublishSmartDoc = respWedoc[WedocPublishSmartDocResp]
+type respWedocCancelPublishSmartDoc = respWedoc[WedocEmptyPayload]
+type respWedocUpdatePublishSetting = respWedoc[WedocEmptyPayload]
+type respWedocGetDocAuth = respWedoc[WedocGetDocAuthResp]
+type respWedocModifyDocJoinRule = respWedoc[WedocEmptyPayload]
+type respWedocModifyDocMember = respWedoc[WedocEmptyPayload]
+type respWedocModifyDocSafetySetting = respWedoc[WedocEmptyPayload]
+type respWedocGetSheetPriv = respWedoc[WedocGetSheetPrivResp]
+type respWedocUpdateSheetPriv = respWedoc[WedocEmptyPayload]
+type respWedocCreateSheetPrivRule = respWedoc[WedocCreateSheetPrivRuleResp]
+type respWedocModifySheetPrivRuleMember = respWedoc[WedocEmptyPayload]
+type respWedocDeleteSheetPrivRule = respWedoc[WedocEmptyPayload]
+type respWedocCreateForm = respWedoc[WedocCreateFormResp]
+type respWedocModifyForm = respWedoc[WedocEmptyPayload]
+type respWedocGetFormInfo = respWedoc[WedocGetFormInfoResp]
+type respWedocGetFormStatistic = respWedoc[WedocGetFormStatisticResp]
+type respWedocGetFormAnswer = respWedoc[WedocGetFormAnswerResp]
+type respWedocWebhookAddRecords = respWedoc[WedocWebhookAddRecordsResp]
+type respWedocWebhookUpdateRecords = respWedoc[WedocWebhookUpdateRecordsResp]
+type respWedocAddVipAccounts = respWedoc[WedocAddVipAccountsResp]
+type respWedocDeleteVipAccounts = respWedoc[WedocDeleteVipAccountsResp]
+type respWedocListVipAccounts = respWedoc[WedocListVipAccountsResp]
+type respWedocUploadDocImage = respWedoc[WedocUploadDocImageResp]
+type respWedocUploadDocFile = respWedoc[WedocUploadDocFileResp]
+type respWedocInitFileUpload = respWedoc[WedocInitFileUploadResp]
+type respWedocUploadFilePart = respWedoc[WedocEmptyPayload]
+type respWedocFinishFileUpload = respWedoc[WedocFinishFileUploadResp]
